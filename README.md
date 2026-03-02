@@ -137,3 +137,57 @@ DELETE /products/:id
 GET /analytics/suppliers
 GET /analytics/customer/:email
 GET /analytics/top-products/:category
+
+
+const pool = require('../config/mysql');
+
+// 1️⃣ Proveedores con más ventas
+exports.topSuppliers = async (req, res) => {
+  const [rows] = await pool.query(`
+    SELECT s.name,
+           SUM(oi.quantity) AS total_items,
+           SUM(oi.quantity * oi.unit_price) AS total_value
+    FROM suppliers s
+    JOIN products p ON s.supplier_id = p.supplier_id
+    JOIN order_items oi ON p.product_id = oi.product_id
+    GROUP BY s.name
+    ORDER BY total_items DESC
+  `);
+  res.json(rows);
+};
+
+// 2️⃣ Historial de cliente
+exports.customerHistory = async (req, res) => {
+  const [rows] = await pool.query(`
+    SELECT o.transaction_id,
+           o.date,
+           p.name,
+           oi.quantity,
+           (oi.quantity * oi.unit_price) AS total
+    FROM customers c
+    JOIN orders o ON c.customer_id = o.customer_id
+    JOIN order_items oi ON o.order_id = oi.order_id
+    JOIN products p ON oi.product_id = p.product_id
+    WHERE c.email = ?
+  `, [req.params.email]);
+
+  res.json(rows);
+};
+
+// 3️⃣ Productos estrella por categoría
+exports.topProductsByCategory = async (req, res) => {
+  const [rows] = await pool.query(`
+    SELECT p.name,
+           SUM(oi.quantity * oi.unit_price) AS revenue
+    FROM products p
+    JOIN categories c ON p.category_id = c.category_id
+    JOIN order_items oi ON p.product_id = oi.product_id
+    WHERE c.name = ?
+    GROUP BY p.name
+    ORDER BY revenue DESC
+  `, [req.params.category]);
+
+  res.json(rows);
+};
+
+
