@@ -190,4 +190,149 @@ exports.topProductsByCategory = async (req, res) => {
   res.json(rows);
 };
 
+const fs = require('fs');
+const csv = require('csv-parser');
+const pool = require('../config/mysql');
 
+async function migrateCSV(filePath) {
+
+  return new Promise((resolve, reject) => {
+
+    fs.createReadStream(filePath)
+      .pipe(csv())
+      .on('data', async (row) => {
+
+        try {
+
+          // 1️⃣ CUSTOMER
+          const [customer] = await pool.query(
+            "SELECT customer_id FROM customers WHERE email=?",
+            [row["Email Cliente"]]
+          );
+
+          let customerId;
+
+          if (customer.length === 0) {
+            const [result] = await pool.query(
+              "INSERT INTO customers (name,email,address) VALUES (?,?,?)",
+              [
+                row["Nombre Cliente"],
+                row["Email Cliente"],
+                row["Dirección"]
+              ]
+            );
+            customerId = result.insertId;
+          } else {
+            customerId = customer[0].customer_id;
+          }
+
+          // 2️⃣ SUPPLIER
+          const [supplier] = await pool.query(
+            "SELECT supplier_id FROM suppliers WHERE name=?",
+            [row["Nombre Proveedor"]]
+          );
+
+          let supplierId;
+
+          if (supplier.length === 0) {
+            const [result] = await pool.query(
+              "INSERT INTO suppliers (name,contact) VALUES (?,?)",
+              [
+                row["Nombre Proveedor"],
+                row["Contacto Proveedor"]
+              ]
+            );
+            supplierId = result.insertId;
+          } else {
+            supplierId = supplier[0].supplier_id;
+          }
+
+          // 3️⃣ CATEGORY
+          const [category] = await pool.query(
+            "SELECT category_id FROM categories WHERE name=?",
+            [row["Categoría Producto"]]
+          );
+
+          let categoryId;
+
+          if (category.length === 0) {
+            const [result] = await pool.query(
+              "INSERT INTO categories (name) VALUES (?)",
+              [row["Categoría Producto"]]
+            );
+            categoryId = result.insertId;
+          } else {
+            categoryId = category[0].category_id;
+          }
+
+          // 4️⃣ PRODUCT
+          const [product] = await pool.query(
+            "SELECT product_id FROM products WHERE sku=?",
+            [row["SKU"]]
+          );
+
+          let productId;
+
+          if (product.length === 0) {
+            const [result] = await pool.query(
+              `INSERT INTO products (sku,name,price,category_id,supplier_id)
+               VALUES (?,?,?,?,?)`,
+              [
+                row["SKU"],
+                row["Nombre Producto"],
+                row["Precio Unitario"],
+                categoryId,
+                supplierId
+              ]
+            );
+            productId = result.insertId;
+          } else {
+            productId = product[0].product_id;
+          }
+
+          // 5️⃣ ORDER
+          const [order] = await pool.query(
+            "SELECT order_id FROM orders WHERE transaction_id=?",
+            [row["ID Transacción"]]
+          );
+
+          let orderId;
+
+          if (order.length === 0) {
+            const [result] = await pool.query(
+              `INSERT INTO orders (transaction_id,date,customer_id)
+               VALUES (?,?,?)`,
+              [
+                row["ID Transacción"],
+                row["Fecha"],
+                customerId
+              ]
+            );
+            orderId = result.insertId;
+          } else {
+            orderId = order[0].order_id;
+          }
+
+          // 6️⃣ ORDER ITEMS
+          await pool.query(
+            `INSERT INTO order_items (order_id,product_id,quantity,unit_price)
+             VALUES (?,?,?,?)`,
+            [
+              orderId,
+              productId,
+              row["Cantidad"],
+              row["Precio Unitario"]
+            ]
+          );
+
+        } catch (err) {
+          console.error(err);
+        }
+
+      })
+      .on('end', resolve)
+      .on('error', reject);
+  });
+}
+
+module.exports = migrateCSV;
