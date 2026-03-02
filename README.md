@@ -348,3 +348,62 @@ module.exports = migrateCSV;
 ![1000073309](https://github.com/user-attachments/assets/4ccead67-fb54-4e23-891c-1d6a551ece99)
 ![1000073308](https://github.com/user-attachments/assets/a4a603f4-4550-471f-987d-0053e3a00c74)
 
+
+
+
+
+
+
+# ==============================
+# NODE MODULES
+# ==============================
+node_modules/
+
+# ==============================
+# ENVIRONMENT VARIABLES
+# ==============================
+.env
+
+# ==============================
+# LOG FILES
+# ==============================
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ==============================
+# OS FILES
+# ==============================
+.DS_Store
+Thumbs.db
+
+# ==============================
+# EDITOR FILES
+# ==============================
+.vscode/
+.idea/
+
+# ==============================
+# BUILD FILES
+# ==============================
+dist/
+build/
+
+# ==============================
+# DATABASE FILES (if local)
+# ==============================
+*.sqlite
+*.sqlite3
+
+# ==============================
+# TEST COVERAGE
+# ==============================
+coverage/
+
+# ==============================
+# TEMP FILES
+# ==============================
+tmp/
+temp/
