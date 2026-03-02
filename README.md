@@ -72,3 +72,33 @@ order_id (FK)
 product_id (FK)
 quantity
 unit_price
+
+
+megastore-api/
+│
+├── src/
+│   ├── config/
+│   │    ├── mysql.js
+│   │    └── mongo.js
+│   │
+│   ├── controllers/
+│   │    ├── productController.js
+│   │    └── analyticsController.js
+│   │
+│   ├── routes/
+│   │    ├── productRoutes.js
+│   │    └── analyticsRoutes.js
+│   │
+│   ├── services/
+│   │    └── migrationService.js
+│   │
+│   └── app.js
+│
+├── docs/
+│   ├── sql_schema.sql
+│   ├── mongo_validation.js
+│   └── sample_data.csv
+│
+├── .env
+├── package.json
+└── README.md
